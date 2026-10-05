@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+APP_HOME=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+WRAPPER_JAR="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+WRAPPER_URL="https://raw.githubusercontent.com/gradle/gradle/v9.6.0/gradle/wrapper/gradle-wrapper.jar"
+WRAPPER_SHA256="497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7"
+
+if [ ! -f "$WRAPPER_JAR" ]; then
+  echo "Downloading Gradle wrapper JAR..."
+  curl -fLsS --retry 3 -o "$WRAPPER_JAR" "$WRAPPER_URL"
+fi
+
+if command -v sha256sum >/dev/null 2>&1; then
+  ACTUAL_SHA256=$(sha256sum "$WRAPPER_JAR" | awk '{print $1}')
+  if [ "$ACTUAL_SHA256" != "$WRAPPER_SHA256" ]; then
+    echo "Gradle wrapper JAR checksum mismatch." >&2
+    rm -f "$WRAPPER_JAR"
+    exit 1
+  fi
+fi
+
+exec java -Dorg.gradle.appname=gradlew -classpath "$WRAPPER_JAR" org.gradle.wrapper.GradleWrapperMain "$@"

@@ -1,0 +1,285 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Code quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Install dependencies
+        run: uv sync --locked --dev
+
+      - name: Check formatting
+        run: uv run black --check src tests
+
+      - name: Run Ruff
+        run: uv run ruff check .
+
+      - name: Run Pyright
+        run: uv run pyright
+
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Install dependencies
+        run: uv sync --locked --dev
+
+      - name: Run unit tests
+        run: >
+          uv run pytest
+          tests/backend/unit
+          --alluredir=allure-results
+
+      - name: Run integration tests
+        run: >
+          uv run pytest
+          tests/backend/integration
+          --alluredir=allure-results
+
+      - name: Upload backend Allure results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-results-backend
+          path: allure-results/
+
+  web:
+    name: Web E2E tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Install dependencies
+        run: uv sync --locked --dev
+
+      - name: Install Playwright browser
+        run: uv run playwright install --with-deps chromium
+
+      - name: Run web E2E tests
+        run: >
+          uv run pytest
+          tests/web/e2e
+          --alluredir=allure-results
+
+      - name: Upload web Allure results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-results-web
+          path: allure-results/
+
+  mobile:
+    name: Mobile Appium tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Install Python dependencies
+        run: uv sync --locked --dev
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Make Gradle executable
+        working-directory: mobile-app
+        run: chmod +x gradlew
+
+      - name: Build Android APK
+        working-directory: mobile-app
+        run: ./gradlew :app:assembleDebug --no-daemon
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=/dev/kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Appium tests on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          emulator-options: >-
+            -no-window
+            -gpu swiftshader_indirect
+            -noaudio
+            -no-boot-anim
+            -camera-back none
+            -camera-front none
+          disable-animations: true
+          working-directory: .
+          script: |
+            adb install -r mobile-app/app/build/outputs/apk/debug/app-debug.apk
+
+            npm install -g appium@3.8.0
+
+            appium driver install uiautomator2@8.7.0
+
+            appium --address 127.0.0.1 --port 4723 > appium.log 2>&1 &
+
+            timeout 30 sh -c 'until curl --silent --fail http://127.0.0.1:4723/status > /dev/null; do sleep 1; done'
+
+            curl --silent --fail http://127.0.0.1:4723/status
+
+            uv run pytest tests/mobile/e2e --alluredir=allure-results
+
+      - name: Upload mobile Allure results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-results-mobile
+          path: allure-results/
+
+      - name: Upload Appium log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: appium-log
+          path: appium.log
+
+      - name: Upload APK
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-apk
+          path: mobile-app/app/build/outputs/apk/debug/app-debug.apk
+
+  allure-report:
+    name: Allure report
+    runs-on: ubuntu-latest
+    needs:
+      - quality
+      - backend
+      - web
+      - mobile
+    if: always()
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Download backend Allure results
+        uses: actions/download-artifact@v8
+        with:
+          name: allure-results-backend
+          path: allure-results/
+
+      - name: Download web Allure results
+        uses: actions/download-artifact@v8
+        with:
+          name: allure-results-web
+          path: allure-results/
+
+      - name: Download mobile Allure results
+        uses: actions/download-artifact@v8
+        with:
+          name: allure-results-mobile
+          path: allure-results/
+
+      - name: Generate Allure report
+        run: npx allure generate allure-results --output allure-report
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          name: github-pages-${{ github.run_attempt }}
+          path: allure-report
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}

@@ -1,0 +1,35 @@
+<resources>
+    <item name="screen_login" type="id" />
+    <item name="screen_register" type="id" />
+    <item name="screen_requests" type="id" />
+    <item name="screen_settings" type="id" />
+
+    <item name="input_api_url" type="id" />
+    <item name="input_login_username" type="id" />
+    <item name="input_login_password" type="id" />
+    <item name="button_login" type="id" />
+    <item name="button_open_register" type="id" />
+    <item name="button_open_settings" type="id" />
+
+    <item name="input_register_username" type="id" />
+    <item name="input_register_password" type="id" />
+    <item name="input_register_password_confirm" type="id" />
+    <item name="button_register" type="id" />
+    <item name="button_back_login" type="id" />
+
+    <item name="button_refresh_requests" type="id" />
+    <item name="button_profile" type="id" />
+    <item name="button_logout" type="id" />
+    <item name="input_request_title" type="id" />
+    <item name="input_request_description" type="id" />
+    <item name="button_create_request" type="id" />
+    <item name="button_close_details" type="id" />
+    <item name="list_requests" type="id" />
+
+    <item name="button_save_settings" type="id" />
+    <item name="button_reset_settings" type="id" />
+    <item name="button_settings_back" type="id" />
+
+    <item name="text_status" type="id" />
+    <item name="text_empty_requests" type="id" />
+</resources>

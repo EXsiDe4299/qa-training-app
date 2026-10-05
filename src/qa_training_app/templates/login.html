@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Вход{% endblock %}
+
+{% block body %}
+<div class="auth-container">
+    <div class="card">
+        <h1>Вход</h1>
+
+        <form id="login-form" data-testid="login-form">
+            <label for="username">Логин</label>
+            <input
+                id="username"
+                name="username"
+                type="text"
+                autocomplete="username"
+                data-testid="username-input"
+                required
+            >
+
+            <label for="password">Пароль</label>
+            <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                data-testid="password-input"
+                required
+            >
+
+            <button type="submit" data-testid="login-submit">
+                Войти
+            </button>
+
+            <p id="error" class="error" data-testid="error-message" aria-live="polite"></p>
+        </form>
+
+        <div class="auth-links">
+            Нет аккаунта?
+            <a href="/register" data-testid="register-link">Зарегистрироваться</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/login.js"></script>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация{% endblock %}
+
+{% block body %}
+<div class="auth-container">
+    <div class="card">
+        <h1>Регистрация</h1>
+
+        <form id="register-form" data-testid="register-form">
+            <label for="username">Логин</label>
+            <input
+                id="username"
+                name="username"
+                type="text"
+                autocomplete="username"
+                data-testid="username-input"
+                required
+            >
+
+            <label for="password">Пароль</label>
+            <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                data-testid="password-input"
+                required
+            >
+
+            <button type="submit" data-testid="register-submit">
+                Зарегистрироваться
+            </button>
+
+            <p id="error" class="error" data-testid="error-message" aria-live="polite"></p>
+        </form>
+
+        <div class="auth-links">
+            Уже есть аккаунт?
+            <a href="/login" data-testid="login-link">Войти</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/register.js"></script>
+{% endblock %}

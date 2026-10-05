@@ -1,0 +1,42 @@
+[project]
+name = "qa-training-app"
+version = "0.1.0"
+description = "A small request-tracking app for QA portfolio practice"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "bcrypt>=5.0.0",
+    "fastapi>=0.141.1",
+    "itsdangerous>=2.2.0",
+    "jinja2>=3.1.6",
+    "pydantic-settings>=2.15.0",
+    "python-multipart>=0.0.32",
+    "uvicorn>=0.52.4",
+]
+
+[project.scripts]
+qa-training-app = "qa_training_app.main:main"
+
+[build-system]
+requires = ["uv_build>=0.11.22,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "allure-pytest>=2.16.2",
+    "appium-python-client>=6.0.7",
+    "black>=26.5.1",
+    "pyright>=1.1.414",
+    "pytest>=9.1.1",
+    "pytest-playwright>=0.9.0",
+    "requests>=2.34.2",
+    "ruff>=0.16.10",
+]
+
+[tool.black]
+target-version = ["py314"]
+line-length = 88
+
+[tool.pytest.ini_options]
+pythonpath = ["tests"]  # импорты `pages.*` и `e2e.*` без установки тестов как пакета
+addopts = "--browser chromium"  # e2e только в Chromium: так проще для портфолио и CI без лишних браузеров

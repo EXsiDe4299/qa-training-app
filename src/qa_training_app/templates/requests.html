@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Заявки{% endblock %}
+
+{% block body %}
+<div class="container">
+    <header>
+        <div>
+            Пользователь:
+            <strong id="current-username" data-testid="current-username"></strong>
+        </div>
+
+        <button id="logout-button" type="button" data-testid="logout-button">
+            Выйти
+        </button>
+    </header>
+
+    <div class="card">
+        <h1>Заявки</h1>
+
+        <section>
+            <h2>Создать заявку</h2>
+
+            <form id="request-form" data-testid="request-form">
+                <label for="title">Заголовок</label>
+                <input
+                    id="title"
+                    name="title"
+                    type="text"
+                    data-testid="title-input"
+                    required
+                >
+
+                <label for="description">Описание</label>
+                <textarea
+                    id="description"
+                    name="description"
+                    data-testid="description-input"
+                    required
+                ></textarea>
+
+                <button type="submit" data-testid="create-request-submit">
+                    Создать заявку
+                </button>
+            </form>
+
+            <p id="error" class="error" data-testid="error-message" aria-live="polite"></p>
+        </section>
+    </div>
+
+    <div class="card">
+        <h2>Все заявки</h2>
+        <div id="requests" class="requests-list" data-testid="requests-list"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/requests.js"></script>
+{% endblock %}
